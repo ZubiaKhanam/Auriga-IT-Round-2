@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cinema Counter</title>
+  <style>
+    :root { --ink: #18251f; --muted: #66756d; --line: #d7e1da; --paper: #f6f8f4; --card: #fff; --accent: #13795b; --accent-dark: #0b5a43; --danger: #a63d35; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: linear-gradient(135deg, #edf5ee, #f8f4ea); font: 16px/1.5 Georgia, serif; }
+    main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 64px; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 28px; }
+    h1 { margin: 0; font-size: clamp(2.3rem, 6vw, 4.7rem); line-height: .95; letter-spacing: -.04em; max-width: 650px; }
+    .kicker { color: var(--accent); font: 700 .78rem/1.2 sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+    .subtitle { max-width: 310px; color: var(--muted); margin: 0; }
+    .layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; align-items: start; }
+    section { background: rgba(255,255,255,.85); border: 1px solid var(--line); border-radius: 8px; padding: 24px; box-shadow: 0 18px 45px rgba(37,64,49,.08); }
+    h2 { margin: 0 0 18px; font: 700 1.25rem/1.2 sans-serif; }
+    .tiers { display: grid; gap: 10px; }
+    .tier { display: grid; grid-template-columns: 1fr auto 90px; gap: 14px; align-items: center; border-top: 1px solid var(--line); padding: 14px 0; }
+    .tier:first-child { border-top: 0; padding-top: 0; }
+    .tier strong { display: block; font: 700 1.05rem sans-serif; }
+    .tier small, .hint { color: var(--muted); font-family: sans-serif; font-size: .8rem; }
+    input { width: 100%; border: 1px solid #b9c9bf; border-radius: 5px; padding: 10px 11px; color: var(--ink); background: #fff; font: inherit; }
+    input:focus { outline: 2px solid #9ed1bb; border-color: var(--accent); }
+    label { display: grid; gap: 6px; font: 700 .86rem sans-serif; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+    .wide { grid-column: 1 / -1; }
+    .member-row { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; font-family: sans-serif; }
+    .member-row input { width: auto; }
+    button { width: 100%; border: 0; border-radius: 5px; margin-top: 22px; padding: 13px 18px; color: #fff; background: var(--accent); cursor: pointer; font: 700 .95rem sans-serif; }
+    button:hover { background: var(--accent-dark); }
+    button:disabled { opacity: .6; cursor: wait; }
+    #message { min-height: 24px; margin: 14px 0 0; color: var(--danger); font-family: sans-serif; }
+    #bill { white-space: pre-wrap; margin: 0; font: 15px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .empty { color: var(--muted); font-family: sans-serif; }
+    @media (max-width: 760px) { main { padding-top: 28px; } header, .layout { grid-template-columns: 1fr; display: grid; } .subtitle { max-width: none; } section { padding: 18px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div><div class="kicker">Local cinema counter</div><h1>Build the perfect booking.</h1></div>
+      <p class="subtitle">Choose seats, set the offer rules, and get a precise bill from the C++ pricing engine.</p>
+    </header>
+    <div class="layout">
+      <section>
+        <h2>Tickets</h2>
+        <div id="tiers" class="tiers"><p class="empty">Loading tiers...</p></div>
+        <div class="fields">
+          <label>Festival discount (paise)<input id="festival" type="number" min="0" value="0"></label>
+          <label>Convenience fee / ticket (paise)<input id="fee" type="number" min="0" value="0"></label>
+          <label>GST (%)<input id="gst" type="number" min="0" max="100" step="0.01" value="18"></label>
+          <div></div>
+          <label>Member discount (%)<input id="memberRate" type="number" min="0" max="100" step="0.01" value="10"></label>
+          <label>Member cap (paise)<input id="memberCap" type="number" min="0" value="10000"></label>
+        </div>
+        <label class="member-row"><input id="member" type="checkbox"> Customer is a member</label>
+        <button id="calculate">Calculate booking</button>
+        <p id="message" role="alert"></p>
+      </section>
+      <section>
+        <h2>Your bill</h2>
+        <pre id="bill" class="empty">Your calculated bill will appear here.</pre>
+      </section>
+    </div>
+  </main>
+  <script>
+    const tiersElement = document.querySelector('#tiers');
+    const billElement = document.querySelector('#bill');
+    const messageElement = document.querySelector('#message');
+    const paise = (value) => `Rs.${Math.floor(value / 100)}.${String(value % 100).padStart(2, '0')}`;
+    const basisPoints = (value) => Math.round(Number(value || 0) * 100);
+
+    async function loadTiers() {
+      const response = await fetch('/api/tiers');
+      const tiers = await response.json();
+      tiersElement.innerHTML = tiers.map((tier) => `
+        <label class="tier"><span><strong>${tier.name}</strong><small>${paise(tier.pricePaise)} each · ${tier.availableSeats} available</small></span>
+          <span class="hint">quantity</span><input class="quantity" data-tier="${tier.name}" type="number" min="0" max="${tier.availableSeats}" value="0"></label>`).join('');
+    }
+
+    async function calculate() {
+      messageElement.textContent = '';
+      const button = document.querySelector('#calculate');
+      button.disabled = true;
+      const tickets = [...document.querySelectorAll('.quantity')]
+        .filter((input) => Number(input.value) > 0)
+        .map((input) => `${input.dataset.tier}:${input.value}`).join(',');
+      const data = new URLSearchParams({
+        tickets, festival: document.querySelector('#festival').value,
+        member: document.querySelector('#member').checked ? '1' : '0',
+        memberRate: basisPoints(document.querySelector('#memberRate').value),
+        memberCap: document.querySelector('#memberCap').value,
+        fee: document.querySelector('#fee').value,
+        gst: basisPoints(document.querySelector('#gst').value)
+      });
+      try {
+        const response = await fetch('/api/book', { method: 'POST', body: data });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to calculate booking');
+        billElement.textContent = result.bill;
+        billElement.classList.remove('empty');
+        await loadTiers();
+      } catch (error) {
+        messageElement.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    document.querySelector('#calculate').addEventListener('click', calculate);
+    loadTiers().catch((error) => { messageElement.textContent = error.message; });
+  </script>
+</body>
+</html>
