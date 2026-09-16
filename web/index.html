@@ -3,113 +3,145 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cinema Counter</title>
+  <title>Reelhouse Cinema | Ticket Booking</title>
   <style>
-    :root { --ink: #18251f; --muted: #66756d; --line: #d7e1da; --paper: #f6f8f4; --card: #fff; --accent: #13795b; --accent-dark: #0b5a43; --danger: #a63d35; }
+    :root {
+      --ink: #172433; --navy: #101d2c; --navy-soft: #1c3044; --muted: #6e7c88;
+      --line: #dbe2e7; --canvas: #f3f5f6; --paper: #ffffff; --warm: #f5eee2;
+      --gold: #c99342; --gold-dark: #9e6e27; --green: #18775f; --green-soft: #e6f3ee; --danger: #b44942;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; color: var(--ink); background: linear-gradient(135deg, #edf5ee, #f8f4ea); font: 16px/1.5 Georgia, serif; }
-    main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 64px; }
-    header { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 28px; }
-    h1 { margin: 0; font-size: clamp(2.3rem, 6vw, 4.7rem); line-height: .95; letter-spacing: -.04em; max-width: 650px; }
-    .kicker { color: var(--accent); font: 700 .78rem/1.2 sans-serif; letter-spacing: .14em; text-transform: uppercase; }
-    .subtitle { max-width: 310px; color: var(--muted); margin: 0; }
-    .layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; align-items: start; }
-    section { background: rgba(255,255,255,.85); border: 1px solid var(--line); border-radius: 8px; padding: 24px; box-shadow: 0 18px 45px rgba(37,64,49,.08); }
-    h2 { margin: 0 0 18px; font: 700 1.25rem/1.2 sans-serif; }
-    .tiers { display: grid; gap: 10px; }
-    .tier { display: grid; grid-template-columns: 1fr auto 90px; gap: 14px; align-items: center; border-top: 1px solid var(--line); padding: 14px 0; }
-    .tier:first-child { border-top: 0; padding-top: 0; }
-    .tier strong { display: block; font: 700 1.05rem sans-serif; }
-    .tier small, .hint { color: var(--muted); font-family: sans-serif; font-size: .8rem; }
-    input { width: 100%; border: 1px solid #b9c9bf; border-radius: 5px; padding: 10px 11px; color: var(--ink); background: #fff; font: inherit; }
-    input:focus { outline: 2px solid #9ed1bb; border-color: var(--accent); }
-    label { display: grid; gap: 6px; font: 700 .86rem sans-serif; }
-    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
-    .wide { grid-column: 1 / -1; }
-    .member-row { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; font-family: sans-serif; }
-    .member-row input { width: auto; }
-    button { width: 100%; border: 0; border-radius: 5px; margin-top: 22px; padding: 13px 18px; color: #fff; background: var(--accent); cursor: pointer; font: 700 .95rem sans-serif; }
-    button:hover { background: var(--accent-dark); }
-    button:disabled { opacity: .6; cursor: wait; }
-    #message { min-height: 24px; margin: 14px 0 0; color: var(--danger); font-family: sans-serif; }
-    #bill { white-space: pre-wrap; margin: 0; font: 15px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .empty { color: var(--muted); font-family: sans-serif; }
-    @media (max-width: 760px) { main { padding-top: 28px; } header, .layout { grid-template-columns: 1fr; display: grid; } .subtitle { max-width: none; } section { padding: 18px; } }
+    body { margin: 0; color: var(--ink); background: var(--canvas); font: 15px/1.5 Arial, sans-serif; }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { color: #fff; background: var(--navy); border-bottom: 4px solid var(--gold); }
+    .topbar-inner, main { width: min(1240px, calc(100% - 40px)); margin: 0 auto; }
+    .topbar-inner { min-height: 74px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; color: var(--gold); font-size: 19px; }
+    .brand-name { font-size: 1rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .counter-label { color: #b7c4cf; font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
+    main { padding: 42px 0 70px; }
+    .page-heading { display: flex; justify-content: space-between; align-items: end; gap: 32px; margin-bottom: 30px; }
+    .eyebrow { margin: 0 0 9px; color: var(--gold-dark); font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 700px; margin-bottom: 12px; color: var(--navy); font: 400 clamp(2.4rem, 5vw, 4.4rem)/.98 Georgia, serif; letter-spacing: -.045em; }
+    .lede { max-width: 570px; margin-bottom: 0; color: var(--muted); font-size: 1.02rem; }
+    .show-status { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .84rem; white-space: nowrap; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+    .panel { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: 0 12px 28px rgba(21, 39, 54, .05); }
+    .panel-header { display: flex; justify-content: space-between; align-items: start; gap: 16px; padding: 22px 24px 18px; border-bottom: 1px solid var(--line); }
+    h2 { margin-bottom: 5px; color: var(--navy); font-size: 1.12rem; }
+    .section-note { margin: 0; color: var(--muted); font-size: .83rem; }
+    .admin-panel { margin-bottom: 22px; }
+    .admin-body { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr); gap: 24px; padding: 22px 24px; }
+    .field-label { display: grid; gap: 7px; color: var(--ink); font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+    textarea, input { width: 100%; border: 1px solid #c7d1d8; border-radius: 5px; color: var(--ink); background: #fff; }
+    textarea { min-height: 122px; resize: vertical; padding: 11px 12px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    input { padding: 10px 11px; }
+    textarea:focus, input:focus { outline: 3px solid #f3dfbb; border-color: var(--gold); }
+    .admin-action { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
+    .import-tip { padding: 13px 15px; border-left: 3px solid var(--gold); color: var(--muted); background: var(--warm); font-size: .82rem; }
+    .import-tip strong { display: block; margin-bottom: 3px; color: var(--ink); }
+    .cleaned-list { color: var(--green); font-size: .82rem; font-weight: 700; }
+    .import-report { max-height: 118px; overflow: auto; margin: 0; white-space: pre-wrap; color: var(--muted); font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .button { border: 0; border-radius: 5px; padding: 12px 18px; color: #fff; background: var(--navy); font-size: .86rem; font-weight: 700; }
+    .button:hover { background: var(--navy-soft); }
+    .button.gold { color: var(--navy); background: var(--gold); }
+    .button.gold:hover { background: #d6a85d; }
+    .button:disabled { opacity: .55; cursor: wait; }
+    .booking-layout { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(330px, .88fr); gap: 22px; align-items: start; }
+    .booking-panel { overflow: hidden; }
+    .ticket-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 22px 24px 24px; }
+    .tier { position: relative; display: flex; flex-direction: column; min-height: 172px; padding: 18px; border: 1px solid var(--line); border-radius: 7px; background: #fbfcfc; }
+    .tier:nth-child(2) { border-color: #d9c08e; background: #fffbf3; }
+    .tier:nth-child(3) { color: #fff; border-color: var(--navy-soft); background: var(--navy-soft); }
+    .tier strong { color: inherit; font: 700 1.12rem Georgia, serif; }
+    .tier small { display: block; margin-top: 7px; color: var(--muted); font-size: .76rem; }
+    .tier:nth-child(3) small { color: #c3d0d9; }
+    .tier-price { margin: 15px 0 auto; color: var(--navy); font-size: 1.2rem; font-weight: 700; }
+    .tier:nth-child(3) .tier-price { color: #fff; }
+    .tier .quantity { margin-top: 14px; border-color: #c7d1d8; }
+    .tier:nth-child(3) .quantity { border-color: #587086; color: #fff; background: #253e54; }
+    .tier .quantity:disabled { opacity: .45; }
+    .offers { padding: 0 24px 24px; }
+    .offers-title { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; color: var(--navy); font-size: .88rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .offers-title::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+    .offer-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; }
+    .member-row { display: flex; grid-column: 1 / -1; align-items: center; gap: 9px; color: var(--ink); font-size: .84rem; font-weight: 700; }
+    .member-row input { width: 17px; height: 17px; accent-color: var(--green); }
+    .calculate-row { display: flex; align-items: center; gap: 16px; margin-top: 18px; }
+    #calculate { flex: 1; padding: 15px 20px; font-size: .95rem; }
+    #message { min-height: 22px; margin: 0; color: var(--danger); font-size: .82rem; }
+    .receipt-panel { position: sticky; top: 20px; overflow: hidden; }
+    .receipt-panel .panel-header { color: #fff; border-color: #2b4156; background: var(--navy); }
+    .receipt-panel h2 { color: #fff; }
+    .receipt-panel .section-note { color: #b7c4cf; }
+    .receipt-wrap { padding: 25px 24px; background: #fffdf9; }
+    #bill { min-height: 360px; margin: 0; white-space: pre-wrap; color: var(--ink); font: 13px/1.8 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .empty { color: var(--muted) !important; }
+    .receipt-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; color: var(--muted); border-top: 1px dashed #cbd5db; font-size: .76rem; }
+    .receipt-footer strong { color: var(--green); }
+    @media (max-width: 900px) { .booking-layout { grid-template-columns: 1fr; } .receipt-panel { position: static; } .receipt-wrap #bill { min-height: 0; } }
+    @media (max-width: 720px) { .topbar-inner, main { width: min(100% - 28px, 600px); } .topbar-inner { min-height: 66px; } .counter-label { display: none; } main { padding-top: 28px; } .page-heading { display: block; } .show-status { margin-top: 18px; } .admin-body { grid-template-columns: 1fr; padding: 18px; } .panel-header { padding: 18px; } .ticket-grid { grid-template-columns: 1fr; padding: 18px; } .offers { padding: 0 18px 18px; } .offer-grid { grid-template-columns: 1fr; } .calculate-row { display: block; } #message { margin-top: 12px; } }
   </style>
 </head>
 <body>
+  <div class="topbar"><div class="topbar-inner"><div class="brand"><span class="brand-mark" aria-hidden="true">&#9654;</span><span class="brand-name">Reelhouse Cinema</span></div><span class="counter-label">Counter workspace / live inventory</span></div></div>
   <main>
-    <header>
-      <div><div class="kicker">Local cinema counter</div><h1>Build the perfect booking.</h1></div>
-      <p class="subtitle">Choose seats, set the offer rules, and get a precise bill from the C++ pricing engine.</p>
-    </header>
-    <div class="layout">
-      <section>
-        <h2>Tickets</h2>
-        <div id="tiers" class="tiers"><p class="empty">Loading tiers...</p></div>
-        <div class="fields">
-          <label>Festival discount (paise)<input id="festival" type="number" min="0" value="0"></label>
-          <label>Convenience fee / ticket (paise)<input id="fee" type="number" min="0" value="0"></label>
-          <label>GST (%)<input id="gst" type="number" min="0" max="100" step="0.01" value="18"></label>
-          <div></div>
-          <label>Member discount (%)<input id="memberRate" type="number" min="0" max="100" step="0.01" value="10"></label>
-          <label>Member cap (paise)<input id="memberCap" type="number" min="0" value="10000"></label>
-        </div>
-        <label class="member-row"><input id="member" type="checkbox"> Customer is a member</label>
-        <button id="calculate">Calculate booking</button>
-        <p id="message" role="alert"></p>
+    <div class="page-heading"><div><p class="eyebrow">Today's screening desk</p><h1>Cinema Ticket Booking</h1><p class="lede">Build a booking in seconds. Prices, offers, fees, tax, and seat availability are calculated by the cinema pricing engine.</p></div><div class="show-status"><span class="status-dot"></span> Booking counter online</div></div>
+    <section class="panel admin-panel">
+      <div class="panel-header"><div><h2>Price List Import</h2><p class="section-note">Refresh the counter's ticket tiers from a CSV price list.</p></div><span class="eyebrow">Admin / counter</span></div>
+      <div class="admin-body"><label class="field-label">CSV price list<textarea id="price-list">name,price,seats
+Silver,150.00,5
+Gold,250.00,2
+Recliner,400.00,0</textarea></label><div class="admin-action"><div class="import-tip"><strong>Accepted format</strong>name, price in rupees, available seats. Duplicate names are cleaned using the first valid row.</div><button id="import" class="button" type="button">Import price list</button><div id="cleaned-list" class="cleaned-list"></div><pre id="import-report" class="import-report"></pre></div></div>
+    </section>
+    <div class="booking-layout">
+      <section class="panel booking-panel">
+        <div class="panel-header"><div><h2>Select Tickets</h2><p class="section-note">Choose a category and set the number of seats.</p></div><span class="eyebrow">Step 01</span></div>
+        <div id="tiers" class="ticket-grid"><p class="empty">Loading tiers...</p></div>
+        <div class="offers"><div class="offers-title">Offers &amp; charges</div><div class="offer-grid"><label class="field-label">Festival discount (paise)<input id="festival" type="number" min="0" value="0"></label><label class="field-label">Convenience fee / ticket (paise)<input id="fee" type="number" min="0" value="0"></label><label class="field-label">Member discount (%)<input id="memberRate" type="number" min="0" max="100" step="0.01" value="10"></label><label class="field-label">Member discount cap (paise)<input id="memberCap" type="number" min="0" value="10000"></label><label class="field-label">GST (%)<input id="gst" type="number" min="0" max="100" step="0.01" value="18"></label><label class="member-row"><input id="member" type="checkbox"> Customer is a member</label></div><div class="calculate-row"><button id="calculate" class="button gold" type="button">Calculate booking</button><p id="message" role="alert"></p></div></div>
       </section>
-      <section>
-        <h2>Your bill</h2>
-        <pre id="bill" class="empty">Your calculated bill will appear here.</pre>
-      </section>
+      <section class="panel receipt-panel"><div class="panel-header"><div><h2>Booking Summary</h2><p class="section-note">Your precise line-by-line receipt</p></div><span class="eyebrow">Step 02</span></div><div class="receipt-wrap"><pre id="bill" class="empty">Your calculated bill will appear here.</pre></div><div class="receipt-footer"><span>All amounts include exact paise</span><strong>Ready to issue</strong></div></section>
     </div>
   </main>
   <script>
     const tiersElement = document.querySelector('#tiers');
     const billElement = document.querySelector('#bill');
     const messageElement = document.querySelector('#message');
+    const cleanedListElement = document.querySelector('#cleaned-list');
+    const importReportElement = document.querySelector('#import-report');
     const paise = (value) => `Rs.${Math.floor(value / 100)}.${String(value % 100).padStart(2, '0')}`;
     const basisPoints = (value) => Math.round(Number(value || 0) * 100);
-
+    const text = (value) => String(value).replace(/[&<>"']/g, (character) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[character]));
     async function loadTiers() {
       const response = await fetch('/api/tiers');
       const tiers = await response.json();
-      tiersElement.innerHTML = tiers.map((tier) => `
-        <label class="tier"><span><strong>${tier.name}</strong><small>${paise(tier.pricePaise)} each · ${tier.availableSeats} available</small></span>
-          <span class="hint">quantity</span><input class="quantity" data-tier="${tier.name}" type="number" min="0" max="${tier.availableSeats}" value="0"></label>`).join('');
+      tiersElement.innerHTML = tiers.map((tier) => `<label class="tier"><span><strong>${text(tier.name)}</strong><small>${paise(tier.pricePaise)} each / ${tier.availableSeats} available</small></span><span class="tier-price">${paise(tier.pricePaise)}</span><input class="quantity" data-tier="${text(tier.name)}" type="number" min="0" max="${tier.availableSeats}" value="0" aria-label="${text(tier.name)} quantity"></label>`).join('');
     }
-
+    function showImportResult(result) {
+      cleanedListElement.textContent = result.tiers.length ? `Cleaned: ${result.tiers.map((tier) => `${tier.name} ${paise(tier.pricePaise)} / ${tier.availableSeats} seats`).join(' | ')}` : 'Cleaned price list: no valid tiers';
+      importReportElement.textContent = `Imported ${result.counts.imported}  /  Deduplicated ${result.counts.deduplicated}  /  Rejected ${result.counts.rejected}  /  Ignored ${result.counts.ignored}\n` + result.report.map((issue) => `Row ${issue.rowNumber}: ${issue.status} - ${issue.reason}${issue.name ? ` (${issue.name})` : ''}`).join('\n');
+    }
+    async function importPriceList() {
+      messageElement.textContent = '';
+      const response = await fetch('/api/import', { method: 'POST', headers: {'Content-Type': 'text/csv'}, body: document.querySelector('#price-list').value });
+      const result = await response.json();
+      showImportResult(result);
+      if (!response.ok) throw new Error('Import rejected: no valid tiers were found');
+      await loadTiers();
+    }
     async function calculate() {
       messageElement.textContent = '';
       const button = document.querySelector('#calculate');
       button.disabled = true;
-      const tickets = [...document.querySelectorAll('.quantity')]
-        .filter((input) => Number(input.value) > 0)
-        .map((input) => `${input.dataset.tier}:${input.value}`).join(',');
-      const data = new URLSearchParams({
-        tickets, festival: document.querySelector('#festival').value,
-        member: document.querySelector('#member').checked ? '1' : '0',
-        memberRate: basisPoints(document.querySelector('#memberRate').value),
-        memberCap: document.querySelector('#memberCap').value,
-        fee: document.querySelector('#fee').value,
-        gst: basisPoints(document.querySelector('#gst').value)
-      });
-      try {
-        const response = await fetch('/api/book', { method: 'POST', body: data });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Unable to calculate booking');
-        billElement.textContent = result.bill;
-        billElement.classList.remove('empty');
-        await loadTiers();
-      } catch (error) {
-        messageElement.textContent = error.message;
-      } finally {
-        button.disabled = false;
-      }
+      const tickets = [...document.querySelectorAll('.quantity')].filter((input) => Number(input.value) > 0).map((input) => `${input.dataset.tier}:${input.value}`).join(',');
+      const data = new URLSearchParams({ tickets, festival: document.querySelector('#festival').value, member: document.querySelector('#member').checked ? '1' : '0', memberRate: basisPoints(document.querySelector('#memberRate').value), memberCap: document.querySelector('#memberCap').value, fee: document.querySelector('#fee').value, gst: basisPoints(document.querySelector('#gst').value) });
+      try { const response = await fetch('/api/book', { method: 'POST', body: data }); const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Unable to calculate booking'); billElement.textContent = result.bill; billElement.classList.remove('empty'); await loadTiers(); } catch (error) { messageElement.textContent = error.message; } finally { button.disabled = false; }
     }
-
     document.querySelector('#calculate').addEventListener('click', calculate);
+    document.querySelector('#import').addEventListener('click', () => { importPriceList().catch((error) => { messageElement.textContent = error.message; }); });
     loadTiers().catch((error) => { messageElement.textContent = error.message; });
   </script>
 </body>

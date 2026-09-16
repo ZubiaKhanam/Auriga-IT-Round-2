@@ -6,6 +6,16 @@ This is intentionally a small C++17 project. `CinemaCounter` owns the configured
 
 This keeps the pricing API reusable for different counters and shows without adding a hierarchy of discount or tax classes that the current requirements do not need.
 
+## Price-list Import
+
+The importer is a separate function, `importPriceList`, that returns validated `TicketTier` values plus an import report. This keeps messy input handling outside the booking engine; the existing `CinemaCounter` remains the final validation boundary and still receives the same clean tier structure.
+
+Input is deliberately a small three-column CSV: `name,price,seats`. Prices are interpreted as rupees, optionally prefixed with the UTF-8 rupee symbol, and must contain at most two decimal places. They are converted directly to integer paise. Names are trimmed and canonicalized with case folding for duplicate detection, while the first accepted spelling is retained for display.
+
+The first valid row for a canonical name wins. Later valid rows with that name are reported as deduplicated and cannot overwrite the accepted price or seats. Blank rows and the header are ignored. Rows with blank or malformed fields, negative prices, or invalid seat counts are rejected with row numbers and reasons. Partial imports are accepted when at least one valid tier remains; an all-invalid import is rejected by the web layer and does not replace the active counter.
+
+The web server parses an import into a temporary result and constructs a temporary `CinemaCounter` before replacing the active counter. This makes a successful import atomic and preserves the previous inventory when no valid tiers are available.
+
 ## Pricing Order
 
 The implementation calculates in this order:

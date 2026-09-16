@@ -5,14 +5,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(cinema_booking src/cinema.cpp)
+add_library(cinema_booking src/cinema.cpp src/price_list.cpp)
 target_include_directories(cinema_booking PUBLIC include)
 
 add_executable(cinema_booking_tests tests/cinema_tests.cpp)
 target_link_libraries(cinema_booking_tests PRIVATE cinema_booking)
+
+add_executable(price_list_tests tests/price_list_tests.cpp)
+target_link_libraries(price_list_tests PRIVATE cinema_booking)
 
 add_executable(cinema_server src/server.cpp)
 target_link_libraries(cinema_server PRIVATE cinema_booking)
 
 enable_testing()
 add_test(NAME cinema_booking_tests COMMAND cinema_booking_tests)
+add_test(NAME price_list_tests COMMAND price_list_tests)

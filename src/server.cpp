@@ -1,10 +1,12 @@
 #include "cinema.hpp"
+#include "price_list.hpp"
 
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <netinet/in.h>
 #include <sstream>
 #include <stdexcept>
@@ -134,6 +136,39 @@ std::string errorJson(const std::string& message) {
     return "{\"error\":\"" + jsonEscape(message) + "\"}";
 }
 
+std::string importResultJson(const ImportResult& result) {
+    std::ostringstream output;
+    output << "{\"tiers\":";
+    output << "[";
+    for (std::size_t index = 0; index < result.tiers.size(); ++index) {
+        if (index > 0) {
+            output << ",";
+        }
+        const auto& tier = result.tiers[index];
+        output << "{\"name\":\"" << jsonEscape(tier.name)
+               << "\",\"pricePaise\":" << tier.pricePaise
+               << ",\"availableSeats\":" << tier.availableSeats << "}";
+    }
+    output << "],\"counts\":{";
+    output << "\"imported\":" << result.importedCount
+           << ",\"deduplicated\":" << result.deduplicatedCount
+           << ",\"rejected\":" << result.rejectedCount
+           << ",\"ignored\":" << result.ignoredCount << "},\"report\":[";
+    for (std::size_t index = 0; index < result.report.size(); ++index) {
+        if (index > 0) {
+            output << ",";
+        }
+        const auto& issue = result.report[index];
+        output << "{\"rowNumber\":" << issue.rowNumber
+               << ",\"status\":\"" << importStatusName(issue.status)
+               << "\",\"rawRow\":\"" << jsonEscape(issue.rawRow)
+               << "\",\"name\":\"" << jsonEscape(issue.name)
+               << "\",\"reason\":\"" << jsonEscape(issue.reason) << "\"}";
+    }
+    output << "]}";
+    return output.str();
+}
+
 std::string httpResponse(
     const std::string& status,
     const std::string& contentType,
@@ -189,7 +224,10 @@ BookingReceipt createBooking(
     return counter.book(items, options);
 }
 
-void handleConnection(int client, CinemaCounter& counter, const std::string& webRoot) {
+void handleConnection(
+    int client,
+    std::unique_ptr<CinemaCounter>& counter,
+    const std::string& webRoot) {
     char buffer[8192] = {};
     const ssize_t received = recv(client, buffer, sizeof(buffer) - 1, 0);
     if (received <= 0) {
@@ -210,11 +248,22 @@ void handleConnection(int client, CinemaCounter& counter, const std::string& web
         if (method == "GET" && path == "/") {
             response = httpResponse("200 OK", "text/html; charset=utf-8", readPage(webRoot + "/index.html"));
         } else if (method == "GET" && path == "/api/tiers") {
-            response = httpResponse("200 OK", "application/json", tiersJson(counter));
+            response = httpResponse("200 OK", "application/json", tiersJson(*counter));
+        } else if (method == "POST" && path == "/api/import") {
+            const std::size_t headerEnd = request.find("\r\n\r\n");
+            const std::string body = headerEnd == std::string::npos ? "" : request.substr(headerEnd + 4);
+            const ImportResult result = importPriceList(body);
+            response = httpResponse(
+                result.tiers.empty() ? "400 Bad Request" : "200 OK",
+                "application/json",
+                importResultJson(result));
+            if (!result.tiers.empty()) {
+                counter = std::make_unique<CinemaCounter>(result.tiers);
+            }
         } else if (method == "POST" && path == "/api/book") {
             const std::size_t headerEnd = request.find("\r\n\r\n");
             const std::string body = headerEnd == std::string::npos ? "" : request.substr(headerEnd + 4);
-            response = httpResponse("200 OK", "application/json", receiptJson(createBooking(counter, parseForm(body))));
+            response = httpResponse("200 OK", "application/json", receiptJson(createBooking(*counter, parseForm(body))));
         } else {
             response = httpResponse("404 Not Found", "application/json", errorJson("route not found"));
         }
@@ -232,7 +281,7 @@ int main(int argc, char* argv[]) {
     const int port = argc > 1 ? std::stoi(argv[1]) : defaultPort;
     const std::string webRoot = argc > 2 ? argv[2] : "web";
 
-    CinemaCounter counter(defaultTiers);
+    auto counter = std::make_unique<CinemaCounter>(defaultTiers);
     const int server = socket(AF_INET, SOCK_STREAM, 0);
     if (server < 0) {
         std::cerr << "Unable to create server socket\n";

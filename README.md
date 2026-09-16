@@ -20,11 +20,15 @@ A small reusable C++17 cinema pricing engine. It accepts configurable ticket tie
 .
 ├── CMakeLists.txt
 ├── include/
-│   └── cinema.hpp          # Public data types and booking API
+│   ├── cinema.hpp          # Public data types and booking API
+│   └── price_list.hpp      # Price-list import and report API
 ├── src/
-│   └── cinema.cpp          # Booking, pricing, validation, and bill formatting
+│   ├── cinema.cpp          # Booking, pricing, validation, and bill formatting
+│   ├── price_list.cpp      # CSV normalization and import reporting
+│   └── server.cpp          # Lightweight web server and API routes
 ├── tests/
-│   └── cinema_tests.cpp    # CTest executable with assert-based tests
+│   ├── cinema_tests.cpp    # Pricing and booking tests
+│   └── price_list_tests.cpp # Importer tests
 ├── README.md
 └── REASONING.md
 ```
@@ -54,6 +58,20 @@ Then open `http://localhost:8080`. The optional first argument is the port and t
 In GitHub Codespaces, open the **PORTS** panel in VS Code, add or inspect port `8080`, and click the globe/open-in-browser icon for that forwarded port. The server must remain running in the terminal. If port 8080 is unavailable, start it on another port and forward that port instead.
 
 The UI shows configured tiers and live available seats, accepts quantities and all current pricing inputs, and refreshes inventory after a successful booking. Validation failures are shown above the bill.
+
+### Price-list Import
+
+Paste CSV rows into the import box using:
+
+```csv
+name,price,seats
+Silver,150.50,5
+Gold,₹250.75,2
+```
+
+Prices are always rupees and may have an optional UTF-8 `₹` prefix and zero, one, or two decimal places. Names are trimmed and compared case-insensitively. The first valid occurrence wins; later valid duplicates are reported as deduplicated. Blank rows and the header are ignored. Invalid rows are rejected with row-level reasons. A partially valid import replaces the active tier list, while an all-invalid import is rejected and leaves the current list unchanged.
+
+The server exposes the same flow through `POST /api/import`, returning cleaned tiers, imported/deduplicated/rejected/ignored counts, and the detailed report. `GET /api/tiers` then returns the active cleaned tiers and live inventory.
 
 ## Build
 
